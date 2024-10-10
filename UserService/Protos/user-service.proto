@@ -5,5 +5,62 @@ option csharp_namespace = "UserService";
 package userService;
 
 service UserService {
+  rpc GetUser(GetUserRequest) returns (UserReply);
+  rpc CreateUser(CreateUserRequest) returns (Status);
+  rpc UpdateUser(UpdateUserRequest) returns (Status);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc GetUserByName(GetUserByNameRequest) returns (UserReply);
 
+}
+
+//message User {
+//  string login = 1;
+//  string password = 2;
+//  string name = 3;
+//  string surname = 4;
+//  int32 age = 5;
+//}
+
+message CreateUserRequest {
+  int32 id = 1;
+  string login = 2;
+  string password = 3;
+  string name = 4;
+  string surname = 5;
+  int32 age = 6;
+}
+
+message Status {
+  bool success = 1;
+}
+
+message GetUserRequest{
+  int32 id = 1;
+}
+
+message GetUserByNameRequest {
+  string name = 1;
+  string surname = 2;
+}
+
+message UpdateUserRequest{
+  int32 id=1;
+  string name=2;
+  int32 age = 3;
+}
+
+message DeleteUserRequest{
+  int32 id =1;
+}
+
+message DeleteUserResponse {
+  bool success = 1;
+}
+
+message UserReply {
+  int32 id = 1;
+  string login = 2;
+  string name = 3;
+  string surname = 4;
+  int32 age = 5;
 }

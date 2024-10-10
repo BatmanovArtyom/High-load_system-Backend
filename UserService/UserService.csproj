@@ -12,6 +12,7 @@
 
     <ItemGroup>
         <PackageReference Include="FluentValidation" Version="11.10.0" />
+        <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
         <PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
         <PackageReference Include="Grpc.Tools" Version="2.57.0" PrivateAssets="All" />
         <PackageReference Include="Grpc.Net.Client" Version="2.59.0" />

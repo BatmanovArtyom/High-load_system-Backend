@@ -6,8 +6,8 @@ package userService;
 
 service UserService {
   rpc GetUser(GetUserRequest) returns (UserReply);
-  rpc CreateUser(CreateUserRequest) returns (Status);
-  rpc UpdateUser(UpdateUserRequest) returns (Status);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
   rpc GetUserByName(GetUserByNameRequest) returns (UserReply);
 
@@ -30,12 +30,16 @@ message CreateUserRequest {
   int32 age = 6;
 }
 
-message Status {
+message CreateUserResponse {
+  bool success = 1;
+}
+message UpdateUserResponse {
   bool success = 1;
 }
 
 message GetUserRequest{
   int32 id = 1;
+  string login = 2;
 }
 
 message GetUserByNameRequest {
@@ -44,13 +48,15 @@ message GetUserByNameRequest {
 }
 
 message UpdateUserRequest{
-  int32 id=1;
-  string name=2;
+  int32 id = 1;
+  string name = 2;
   int32 age = 3;
+  string surname = 4;;
 }
 
 message DeleteUserRequest{
   int32 id =1;
+  string login = 2;
 }
 
 message DeleteUserResponse {

@@ -23,20 +23,23 @@ public class UserRepository : IUserRepository
                 user.Name,
                 user.Surname,
                 user.Age
-
             });
-        
-        //валидировать создание, если получилось, то вкрнем true
-        // if ()
-        // {
-        //     
-        // }
-        return true;
-    }
 
+        if (userId > 0)
+        {
+            return true;
+        }
+        
+        return false;
+    }
+    
     public async Task<User> GetUserById(int id)
     {
-        //по идее надо как-то проверять айдишник,  но я хз
+        if (id < 0)
+        {
+            throw new ArgumentException("ID должен быть больше нуля.", nameof(id));
+        }
+
         var user = await _dbConnection.QuerySingleOrDefaultAsync<User>("SELECT * FROM get_user_by_id(@Id)", new { id = id });
         
         return user;

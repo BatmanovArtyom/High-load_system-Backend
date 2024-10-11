@@ -13,7 +13,7 @@ public class UserRepository : IUserRepository
         _dbConnection = dbConnection;
     }
 
-    public async Task<User> CreateUser(User user)
+    public async Task<bool> CreateUser(User user)
     {
         var userId = await _dbConnection.ExecuteScalarAsync<int>(
             "SELECT create_user (@Login, @Password, @Name, @Surname, @Age)", new
@@ -31,7 +31,7 @@ public class UserRepository : IUserRepository
         // {
         //     
         // }
-        return user;
+        return true;
     }
 
     public async Task<User> GetUserById(int id)

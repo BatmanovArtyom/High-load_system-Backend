@@ -16,13 +16,13 @@ public class UserApiService(UserRepository userRepository, ILogger<UserApiServic
     {
         _logger.LogInformation("Try to create user {Login}", request.Login);
         var validator = new CreateUserValidator();
-        var validationResult = await validator.ValidateAsync(request);
+        var validationResult = validator.Validate(request);
         if (!validationResult.IsValid)
         {
             var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
             throw new RpcException(new Status(StatusCode.InvalidArgument, errors));
         }
-        var existingUser = await _userRepository.GetUserById(request.Id);
+        var existingUser = await _userRepository.GetUserById(request.Id, context.CancellationToken);
         if (existingUser != null)
         {
             _logger.LogWarning("User creation failed. Login {Login} already exists.", request.Login);
@@ -38,7 +38,7 @@ public class UserApiService(UserRepository userRepository, ILogger<UserApiServic
             Age = request.Age
         };
 
-        var isCreated = await userRepository.CreateUser(user);
+        var isCreated = await userRepository.CreateUser(user, context.CancellationToken);
         if (isCreated)
         {
             _logger.LogInformation("User {Login} create", request.Login);
@@ -54,7 +54,7 @@ public class UserApiService(UserRepository userRepository, ILogger<UserApiServic
 
     public override async Task<DeleteUserResponse> DeleteUser(DeleteUserRequest request, ServerCallContext context)
     {
-        var isDeleted = await _userRepository.DeleteUser(request.Id);
+        var isDeleted = await _userRepository.DeleteUser(request.Id, context.CancellationToken);
         if (isDeleted)
         {
             _logger.LogInformation("User {Login} delete", request.Login);
@@ -69,14 +69,14 @@ public class UserApiService(UserRepository userRepository, ILogger<UserApiServic
     public override async Task<UpdateUserResponse> UpdateUser(UpdateUserRequest request, ServerCallContext context)
     {
         var validator = new UpdateUserValidator();
-        var validationResult = await validator.ValidateAsync(request);
+        var validationResult = validator.Validate(request);
         if (!validationResult.IsValid)
         {
             var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
             _logger.LogWarning("Validation failed for user update: {Errors}", errors);
             throw new RpcException(new Status(StatusCode.InvalidArgument, errors));
         }
-        var user = await _userRepository.GetUserById(request.Id);
+        var user = await _userRepository.GetUserById(request.Id, context.CancellationToken);
             
         if (user == null)
             throw new RpcException(new Status(StatusCode.NotFound, $"User with ID {request.Id} not found."));
@@ -85,7 +85,7 @@ public class UserApiService(UserRepository userRepository, ILogger<UserApiServic
         user.Surname = request.Surname;
         user.Age = request.Age;
 
-        var isUpdated = await _userRepository.UpdateUser(user);
+        var isUpdated = await _userRepository.UpdateUser(user, context.CancellationToken);
         if (isUpdated)
         {
             _logger.LogInformation("User id {Id} update", request.Id);
@@ -99,7 +99,12 @@ public class UserApiService(UserRepository userRepository, ILogger<UserApiServic
     }
     public override async Task<UserReply> GetUserByName(GetUserByNameRequest request, ServerCallContext context)
     {
-        var user = await _userRepository.GetUserByName(request.Name, request.Surname);
+        if (request.Name == null )
+        {
+            _logger.LogError("Error get user {Name}", request.Name);
+            throw new RpcException(new Status(StatusCode.NotFound, $"Not name"));
+        }
+        var user = await _userRepository.GetUserByName(request.Name, request.Surname, context.CancellationToken);
 
         if (user == null)
         {
@@ -120,7 +125,12 @@ public class UserApiService(UserRepository userRepository, ILogger<UserApiServic
 
     public override async Task<UserReply> GetUser(GetUserRequest request, ServerCallContext context)
     {
-        var user = await _userRepository.GetUserById(request.Id);
+        if (request.Id < 0 )
+        {
+            _logger.LogError("Error get user {Id}", request.Id);
+            throw new RpcException(new Status(StatusCode.NotFound, $"Id less 0"));
+        }
+        var user = await _userRepository.GetUserById(request.Id, context.CancellationToken);
         if (user == null)
         {
             _logger.LogError("Error get user {Id}", request.Id);

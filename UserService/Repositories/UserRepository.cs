@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Npgsql;
 using UserService.Models;
+using UserService.Services;
 
 namespace UserService.Repositories;
 
@@ -15,12 +16,14 @@ public class UserRepository : IUserRepository
 
     public async Task<bool> CreateUser(User user, CancellationToken cancellationToken)
     {
+        var userDbModel = UserMapping.MappingToDbModelFromUser(user);
+        
         var parameters = new DynamicParameters();
-        parameters.Add("@Login", user.Login);
-        parameters.Add("@Password", user.Password);
-        parameters.Add("@Name", user.Name);
-        parameters.Add("@Surname", user.Surname);
-        parameters.Add("@Age", user.Age);
+        parameters.Add("@Login", userDbModel.Login);
+        parameters.Add("@Password", userDbModel.Password);
+        parameters.Add("@Name", userDbModel.Name);
+        parameters.Add("@Surname", userDbModel.Surname);
+        parameters.Add("@Age", userDbModel.Age);
         
         await using var connection = new NpgsqlConnection(_connection);
         var command = new CommandDefinition("SELECT create_user (@Login, @Password, @Name, @Surname, @Age)", parameters, cancellationToken: cancellationToken);
@@ -36,8 +39,9 @@ public class UserRepository : IUserRepository
         
         await using var connection = new NpgsqlConnection(_connection);
         var command = new CommandDefinition("SELECT * FROM get_user_by_id(@Id)", parameters, cancellationToken: cancellationToken);
-        var user = await connection.QuerySingleOrDefaultAsync<User>(command);
+        var userDbModel = await connection.QuerySingleOrDefaultAsync<User>(command);
         
+        var user = UserMapping.MappingToUserFromDbModel(userDbModel);
         return user;
     }
 
@@ -49,18 +53,21 @@ public class UserRepository : IUserRepository
         
         await using var connection = new NpgsqlConnection(_connection);
         var command = new CommandDefinition("SELECT * FROM get_user_by_name(@Name)", parameters, cancellationToken: cancellationToken);
-        var user = await connection.QuerySingleOrDefaultAsync<User>(command);
+        var userDbModel = await connection.QuerySingleOrDefaultAsync<User>(command);
         
+        var user = UserMapping.MappingToUserFromDbModel(userDbModel);
         return user;
     }
     
     public async Task<bool> UpdateUser(User user, CancellationToken cancellationToken)
     {
+        var userDbModel = UserMapping.MappingToDbModelFromUser(user);
+        
         var parameters = new DynamicParameters();
-        parameters.Add("@Id", user.Id);
-        parameters.Add("@Name", user.Name);
-        parameters.Add("@Surname", user.Surname);
-        parameters.Add("@Age", user.Age);
+        parameters.Add("@Id", userDbModel.Id);
+        parameters.Add("@Name", userDbModel.Name);
+        parameters.Add("@Surname", userDbModel.Surname);
+        parameters.Add("@Age", userDbModel.Age);
         
         await using var connection = new NpgsqlConnection(_connection);
         var command = new CommandDefinition("SELECT update_user(@Id, @Name, @Surname, @Age)", parameters, cancellationToken: cancellationToken);

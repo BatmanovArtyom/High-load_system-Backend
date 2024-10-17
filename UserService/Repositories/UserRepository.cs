@@ -1,16 +1,16 @@
-﻿using System.Data;
-using Dapper;
+﻿using Dapper;
+using Npgsql;
 using UserService.Models;
 
 namespace UserService.Repositories;
 
 public class UserRepository : IUserRepository
 {
-    private readonly IDbConnection _dbConnection;
+    private readonly string _connection;
 
-    public UserRepository(IDbConnection dbConnection)
+    public UserRepository(string connection)
     {
-        _dbConnection = dbConnection;
+       _connection = connection;
     }
 
     public async Task<bool> CreateUser(User user, CancellationToken cancellationToken)
@@ -22,9 +22,9 @@ public class UserRepository : IUserRepository
         parameters.Add("@Surname", user.Surname);
         parameters.Add("@Age", user.Age);
         
-        
+        await using var connection = new NpgsqlConnection(_connection);
         var command = new CommandDefinition("SELECT create_user (@Login, @Password, @Name, @Surname, @Age)", parameters, cancellationToken: cancellationToken);
-        var userId = await _dbConnection.QuerySingleAsync<int>(command);
+        var userId = await connection.QuerySingleAsync<int>(command);
 
         return userId != 0;
     }
@@ -34,8 +34,9 @@ public class UserRepository : IUserRepository
         var parameters = new DynamicParameters();
         parameters.Add("@Id", id);
         
+        await using var connection = new NpgsqlConnection(_connection);
         var command = new CommandDefinition("SELECT * FROM get_user_by_id(@Id)", parameters, cancellationToken: cancellationToken);
-        var user = await _dbConnection.QuerySingleOrDefaultAsync<User>(command);
+        var user = await connection.QuerySingleOrDefaultAsync<User>(command);
         
         return user;
     }
@@ -46,8 +47,9 @@ public class UserRepository : IUserRepository
         parameters.Add("@Name", name);
         parameters.Add("@Surname", surname);
         
+        await using var connection = new NpgsqlConnection(_connection);
         var command = new CommandDefinition("SELECT * FROM get_user_by_name(@Name)", parameters, cancellationToken: cancellationToken);
-        var user = await _dbConnection.QuerySingleOrDefaultAsync<User>(command);
+        var user = await connection.QuerySingleOrDefaultAsync<User>(command);
         
         return user;
     }
@@ -60,9 +62,9 @@ public class UserRepository : IUserRepository
         parameters.Add("@Surname", user.Surname);
         parameters.Add("@Age", user.Age);
         
-        
+        await using var connection = new NpgsqlConnection(_connection);
         var command = new CommandDefinition("SELECT update_user(@Id, @Name, @Surname, @Age)", parameters, cancellationToken: cancellationToken);
-        var success = await _dbConnection.ExecuteScalarAsync<bool>(command);
+        var success = await connection.ExecuteScalarAsync<bool>(command);
 
         return success;
     }
@@ -72,11 +74,11 @@ public class UserRepository : IUserRepository
         var parameters = new DynamicParameters();
         parameters.Add("@Id", id);
         
+        
+        await using var connection = new NpgsqlConnection(_connection);
         var command = new CommandDefinition("SELECT delete_user(@Id)", parameters, cancellationToken: cancellationToken);
-        var success = await _dbConnection.ExecuteScalarAsync<bool>(command);
+        var success = await connection.ExecuteScalarAsync<bool>(command);
 
         return success;
     }
-
-
 }

@@ -1,3 +1,5 @@
+using Npgsql;
+
 namespace UserService.Database;
 
 using System.Data;
@@ -5,28 +7,21 @@ using Dapper;
 
 public static class DatabaseInitializer
 {
-    public static async Task InitializeDatabaseAsync(IDbConnection dbConnection)
+    public static async Task InitializeAsync(string connectionString)
     {
-        // Чтение и выполнение SQL-скриптов из файлов
-        var createTableQuery = await File.ReadAllTextAsync("Database/create_table_user.sql");
-        await dbConnection.ExecuteAsync(createTableQuery);
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
 
-        var createFunctionQueries = new[]
-        {
-            await File.ReadAllTextAsync("Database/create_function_create_user.sql"),
-            await File.ReadAllTextAsync("Database/create_function_get_user_by_id.sql"),
-            await File.ReadAllTextAsync("Database/create_function_get_user_by_name.sql"),
-            await File.ReadAllTextAsync("Database/create_function_update_user.sql"),
-            await File.ReadAllTextAsync("Database/create_function_delete_user.sql")
-        };
+        // Получаем все SQL-скрипты
+        var sqlFiles = Directory.GetFiles("Database", "*.sql");
 
-        foreach (var query in createFunctionQueries)
+        foreach (var sqlFile in sqlFiles)
         {
-            await dbConnection.ExecuteAsync(query);
+            var sql = await File.ReadAllTextAsync(sqlFile);
+            await using var command = new NpgsqlCommand(sql, connection);
+            await command.ExecuteNonQueryAsync();
         }
 
-        // Применение индексов
-        // var createIndexesQuery = await File.ReadAllTextAsync("Database/create_indexes.sql");
-        // await dbConnection.ExecuteAsync(createIndexesQuery);
+        await connection.CloseAsync();
     }
 }

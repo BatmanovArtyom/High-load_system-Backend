@@ -4,8 +4,9 @@ namespace UserService.Services;
 
 public class UserMapping
 {
-    public static User MappingToUserFromDbModel(User userDbModel)
+    public static User? MappingToUserFromDbModel(UserDbModel userDbModel)
     {
+        
         return new User
         {
             Id = userDbModel.Id,

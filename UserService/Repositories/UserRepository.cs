@@ -39,10 +39,9 @@ public class UserRepository : IUserRepository
         
         await using var connection = new NpgsqlConnection(_connection);
         var command = new CommandDefinition("SELECT * FROM get_user_by_id(@Id)", parameters, cancellationToken: cancellationToken);
-        var userDbModel = await connection.QuerySingleOrDefaultAsync<User>(command);
+        var userDbModel = await connection.QuerySingleOrDefaultAsync<UserDbModel>(command);
         
-        var user = UserMapping.MappingToUserFromDbModel(userDbModel);
-        return user;
+        return userDbModel == null ? null : UserMapping.MappingToUserFromDbModel(userDbModel);
     }
 
     public async Task<User> GetUserByName(string name, string surname, CancellationToken cancellationToken)
@@ -53,7 +52,7 @@ public class UserRepository : IUserRepository
         
         await using var connection = new NpgsqlConnection(_connection);
         var command = new CommandDefinition("SELECT * FROM get_user_by_name(@Name)", parameters, cancellationToken: cancellationToken);
-        var userDbModel = await connection.QuerySingleOrDefaultAsync<User>(command);
+        var userDbModel = await connection.QuerySingleOrDefaultAsync<UserDbModel>(command);
         
         var user = UserMapping.MappingToUserFromDbModel(userDbModel);
         return user;

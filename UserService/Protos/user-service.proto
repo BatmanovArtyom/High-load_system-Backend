@@ -51,7 +51,7 @@ message UpdateUserRequest{
   int32 id = 1;
   string name = 2;
   int32 age = 3;
-  string surname = 4;;
+  string surname = 4;
 }
 
 message DeleteUserRequest{

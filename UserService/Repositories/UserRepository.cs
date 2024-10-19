@@ -1,22 +1,24 @@
 ﻿using Dapper;
 using Npgsql;
+using UserService.Mapping;
 using UserService.Models;
-using UserService.Services;
 
 namespace UserService.Repositories;
 
 public class UserRepository : IUserRepository
 {
     private readonly string _connection;
+    private readonly IUserMapping _userMapping;
 
-    public UserRepository(string connection)
+    public UserRepository(string connection, IUserMapping userMapping)
     {
        _connection = connection;
+       _userMapping = userMapping;
     }
 
     public async Task<bool> CreateUser(User user, CancellationToken cancellationToken)
     {
-        var userDbModel = UserMapping.MapToDbModelFromUser(user);
+        var userDbModel = _userMapping.MapToDbModelFromUser(user);
         
         var parameters = new DynamicParameters();
         parameters.Add("@Login", userDbModel.Login);
@@ -41,7 +43,7 @@ public class UserRepository : IUserRepository
         var command = new CommandDefinition("SELECT * FROM get_user_by_id(@Id)", parameters, cancellationToken: cancellationToken);
         var userDbModel = await connection.QuerySingleOrDefaultAsync<UserDbModel>(command);
         
-        return userDbModel == null ? null : UserMapping.MapToUserFromDbModel(userDbModel);
+        return userDbModel == null ? null : _userMapping.MapToUserFromDbModel(userDbModel);
     }
 
     public async Task<User> GetUserByName(string name, string surname, CancellationToken cancellationToken)
@@ -54,13 +56,13 @@ public class UserRepository : IUserRepository
         var command = new CommandDefinition("SELECT * FROM get_user_by_name(@Name)", parameters, cancellationToken: cancellationToken);
         var userDbModel = await connection.QuerySingleOrDefaultAsync<UserDbModel>(command);
         
-        var user = UserMapping.MapToUserFromDbModel(userDbModel);
+        var user = _userMapping.MapToUserFromDbModel(userDbModel);
         return user;
     }
     
     public async Task<bool> UpdateUser(User user, CancellationToken cancellationToken)
     {
-        var userDbModel = UserMapping.MapToDbModelFromUser(user);
+        var userDbModel = _userMapping.MapToDbModelFromUser(user);
         
         var parameters = new DynamicParameters();
         parameters.Add("@Id", userDbModel.Id);

@@ -1,6 +1,7 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using UserService.Database;
+using UserService.Mapping;
 using UserService.Repositories;
 using UserService.Services;
 
@@ -15,9 +16,9 @@ builder.Logging.AddConsole();
 
 
 var connectionString = builder.Configuration.GetConnectionString("PostgresDb");
-builder.Services.AddSingleton<IUserRepository>(provider => new UserRepository(connectionString));
+builder.Services.AddSingleton<IUserRepository>(provider => new UserRepository(connectionString, provider.GetRequiredService<IUserMapping>()));
+builder.Services.AddSingleton<IUserMapping, UserMapping>();
 await DatabaseInitializer.InitializeAsync(connectionString);
-
 var app = builder.Build();
 
 app.MapGrpcService<UserApiService>();

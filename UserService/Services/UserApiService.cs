@@ -6,10 +6,10 @@ using UserService.Validators;
 
 namespace UserService.Services;
 
-public class UserApiService(UserRepository userRepository, ILogger<UserApiService> logger)
+public class UserApiService(IUserRepository userRepository, ILogger<UserApiService> logger)
     : UserService.UserServiceBase
 {
-    private readonly UserRepository _userRepository = userRepository;
+    private readonly IUserRepository _userRepository = userRepository;
     private readonly ILogger<UserApiService> _logger = logger;
 
     public override async Task<CreateUserResponse> CreateUser(CreateUserRequest request, ServerCallContext context)
@@ -28,6 +28,7 @@ public class UserApiService(UserRepository userRepository, ILogger<UserApiServic
             _logger.LogWarning("User creation failed. Login {Login} already exists.", request.Login);
             throw new RpcException(new Status(StatusCode.AlreadyExists, "Login already exists."));
         }
+        
         var user = new User
         {
             Id = request.Id,

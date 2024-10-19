@@ -4,7 +4,7 @@ namespace UserService.Services;
 
 public class UserMapping
 {
-    public static User? MappingToUserFromDbModel(UserDbModel userDbModel)
+    public static User? MapToUserFromDbModel(UserDbModel userDbModel)
     {
         
         return new User
@@ -19,7 +19,7 @@ public class UserMapping
         };
     }
 
-    public static UserDbModel MappingToDbModelFromUser(User user)
+    public static UserDbModel MapToDbModelFromUser(User user)
     {
         return new UserDbModel
         {

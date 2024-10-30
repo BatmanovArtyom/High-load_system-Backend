@@ -19,7 +19,7 @@ public class UserMapping : IUserMapping
         };
     }
 
-    public  UserDbModel MapToDbModelFromUser(User user)
+    public  UserDbModel MapToDbModelFromUser(User? user)
     {
         return new UserDbModel
         {

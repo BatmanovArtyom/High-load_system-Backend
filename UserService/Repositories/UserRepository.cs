@@ -16,7 +16,7 @@ public class UserRepository : IUserRepository
        _userMapping = userMapping;
     }
 
-    public async Task<bool> CreateUser(User user, CancellationToken cancellationToken)
+    public async Task<bool> CreateUser(User? user, CancellationToken cancellationToken)
     {
         var userDbModel = _userMapping.MapToDbModelFromUser(user);
         
@@ -34,7 +34,7 @@ public class UserRepository : IUserRepository
         return userId != 0;
     }
     
-    public async Task<User> GetUserById(int id, CancellationToken cancellationToken)
+    public async Task<User?> GetUserById(int id, CancellationToken cancellationToken)
     {
         var parameters = new DynamicParameters();
         parameters.Add("@Id", id);
@@ -53,14 +53,14 @@ public class UserRepository : IUserRepository
         parameters.Add("@Surname", surname);
         
         await using var connection = new NpgsqlConnection(_connection);
-        var command = new CommandDefinition("SELECT * FROM get_user_by_name(@Name)", parameters, cancellationToken: cancellationToken);
+        var command = new CommandDefinition("SELECT * FROM get_user_by_name(@Name, @Surname)", parameters, cancellationToken: cancellationToken);
         var userDbModel = await connection.QuerySingleOrDefaultAsync<UserDbModel>(command);
         
         var user = _userMapping.MapToUserFromDbModel(userDbModel);
         return user;
     }
     
-    public async Task<bool> UpdateUser(User user, CancellationToken cancellationToken)
+    public async Task<bool> UpdateUser(User? user, CancellationToken cancellationToken)
     {
         var userDbModel = _userMapping.MapToDbModelFromUser(user);
         
@@ -71,7 +71,7 @@ public class UserRepository : IUserRepository
         parameters.Add("@Age", userDbModel.Age);
         
         await using var connection = new NpgsqlConnection(_connection);
-        var command = new CommandDefinition("SELECT update_user(@Id, @Name, @Surname, @Age)", parameters, cancellationToken: cancellationToken);
+        var command = new CommandDefinition("SELECT * FROM update_user(@Id, @Name, @Surname, @Age)", parameters, cancellationToken: cancellationToken);
         var success = await connection.ExecuteScalarAsync<bool>(command);
 
         return success;

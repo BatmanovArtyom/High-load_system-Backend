@@ -1,8 +1,9 @@
 ﻿using FluentValidation;
+using UserService.Models;
 
 namespace UserService.Validators;
 
-public class UpdateUserValidator : AbstractValidator<UpdateUserRequest>
+public class UpdateUserValidator : AbstractValidator<User>
 {
     public UpdateUserValidator()
     {

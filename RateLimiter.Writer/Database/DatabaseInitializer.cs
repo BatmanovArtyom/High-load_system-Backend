@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using RateLimiter.Writer.Models.DbModels;
 
@@ -7,10 +8,18 @@ public class DatabaseInitializer
 {
     private readonly IMongoDatabase _database;
 
-    public DatabaseInitializer(MongoDbSettings settings)
+    public DatabaseInitializer(IOptions<MongoDbSettings> settings)
     {
-        var client = new MongoClient(settings.ConnectionString);
-        _database = client.GetDatabase(settings.DatabaseName);
+        var connectionString = settings.Value.MongoDb;
+        var databaseName = settings.Value.DatabaseName;
+
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            throw new ArgumentNullException(nameof(connectionString), "Connection string cannot be null or empty.");
+        }
+
+        var client = new MongoClient(connectionString);
+        _database = client.GetDatabase(databaseName);
     }
 
     public IMongoCollection<RateLimitDbModel> GetRateLimitCollection()

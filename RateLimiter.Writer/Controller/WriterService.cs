@@ -21,7 +21,7 @@ public class WriterService : Writer.WriterBase
             RequestsPerMinute = request.RequestsPerMinute
         };
 
-        var success = await _writerDomainService.CreateRateLimite(rateLimit, context.CancellationToken);
+        var success = await _writerDomainService.CreateRateLimit(rateLimit, context.CancellationToken);
         return new CreateRateLimitResponse { Success = success };
     }
 

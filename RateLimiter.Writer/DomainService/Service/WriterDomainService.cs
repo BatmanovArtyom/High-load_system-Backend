@@ -17,7 +17,7 @@ public class WriterDomainService :IWriterDomainService
     }
 
 
-    public async Task<bool> CreateRateLimite(RateLimit rateLimit, CancellationToken cancellationToken)
+    public async Task<bool> CreateRateLimit(RateLimit rateLimit, CancellationToken cancellationToken)
     {
         var existingLimit = await _rateLimitRepository.GetByRouteAsync(rateLimit.Route, cancellationToken);
         if (existingLimit != null)

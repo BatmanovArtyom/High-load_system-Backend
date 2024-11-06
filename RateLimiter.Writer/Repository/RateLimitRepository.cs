@@ -1,4 +1,5 @@
 ﻿using MongoDB.Driver;
+using RateLimiter.Writer.Database;
 using RateLimiter.Writer.Models.DbModels;
 using RateLimiter.Writer.Models.DomainModels;
 using RateLimiter.Writer.Models.mapper;
@@ -10,9 +11,9 @@ public class RateLimitRepository : IRateLimitRepository
     private readonly IMongoCollection<RateLimitDbModel> _rateLimits;
     private readonly IRateLimitMapper _rateLimitMapper;
 
-    public RateLimitRepository(IMongoDatabase database, IRateLimitMapper rateLimitMapper)
+    public RateLimitRepository(DatabaseInitializer databaseInitializer, IRateLimitMapper rateLimitMapper)
     {
-        _rateLimits = database.GetCollection<RateLimitDbModel>("rate_limits");
+        _rateLimits = databaseInitializer.GetRateLimitCollection();
         _rateLimitMapper = rateLimitMapper;
     }
     

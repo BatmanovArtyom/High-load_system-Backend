@@ -1,16 +1,16 @@
 using Grpc.Core;
+using RateLimiter.Writer.DomainService.Service;
 using RateLimiter.Writer.Models.DomainModels;
-using RateLimiter.Writer.Repository;
 
-namespace RateLimiter.Writer.DomainService.Service;
+namespace RateLimiter.Writer.Controller;
 
 public class WriterService : Writer.WriterBase
 {
-    private readonly IRateLimitRepository _rateLimitRepository;
+    private readonly IWriterDomainService _writerDomainService;
 
-    public WriterService(IRateLimitRepository rateLimitRepository)
+    public WriterService(IWriterDomainService writerDomainService)
     {
-        _rateLimitRepository = rateLimitRepository;
+        _writerDomainService = writerDomainService;
     }
 
     public override async Task<CreateRateLimitResponse> CreateRateLimit(CreateRateLimitRequest request, ServerCallContext context)
@@ -21,13 +21,13 @@ public class WriterService : Writer.WriterBase
             RequestsPerMinute = request.RequestsPerMinute
         };
 
-        var success = await _rateLimitRepository.CreateAsync(rateLimit, context.CancellationToken);
+        var success = await _writerDomainService.CreateRateLimite(rateLimit, context.CancellationToken);
         return new CreateRateLimitResponse { Success = success };
     }
 
     public override async Task<GetRateLimitResponse> GetRateLimit(GetRateLimitRequest request, ServerCallContext context)
     {
-        var rateLimit = await _rateLimitRepository.GetByRouteAsync(request.Route, context.CancellationToken);
+        var rateLimit = await _writerDomainService.GetByRoute(request.Route, context.CancellationToken);
 
         if (rateLimit == null)
             throw new RpcException(new Status(StatusCode.NotFound, "Rate limit not found"));
@@ -47,13 +47,13 @@ public class WriterService : Writer.WriterBase
             RequestsPerMinute = request.RequestsPerMinute
         };
 
-        var success = await _rateLimitRepository.UpdateAsync(rateLimit, context.CancellationToken);
+        var success = await _writerDomainService.UpdateRoute(rateLimit, context.CancellationToken);
         return new UpdateRateLimitResponse { Success = success };
     }
 
     public override async Task<DeleteRateLimitResponse> DeleteRateLimit(DeleteRateLimitRequest request, ServerCallContext context)
     {
-        var success = await _rateLimitRepository.DeleteAsync(request.Route, context.CancellationToken);
+        var success = await _writerDomainService.DeleteRoute(request.Route, context.CancellationToken);
         return new DeleteRateLimitResponse { Success = success };
     }
 }

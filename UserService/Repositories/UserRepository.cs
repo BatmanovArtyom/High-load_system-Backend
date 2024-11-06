@@ -10,10 +10,10 @@ public class UserRepository : IUserRepository
     private readonly string _connection;
     private readonly IUserMapping _userMapping;
 
-    public UserRepository(string connection, IUserMapping userMapping)
+    public UserRepository(string connection)
     {
        _connection = connection;
-       _userMapping = userMapping;
+       _userMapping = UserMappingFactory.CreateUserMapping();
     }
 
     public async Task<bool> CreateUser(User? user, CancellationToken cancellationToken)

@@ -6,7 +6,7 @@ using UserService.Validators;
 
 namespace UserService.Domain_Service;
 
-public class UserServiceDomain
+public class UserServiceDomain : IUserServiceDomain
 {
     private readonly IUserRepository _userRepository;
     private readonly IValidator<User?> _createUserValidator;

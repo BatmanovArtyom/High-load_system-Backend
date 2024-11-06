@@ -21,7 +21,7 @@ builder.Logging.AddConsole();
 
 
 var connectionString = builder.Configuration.GetConnectionString("PostgresDb");
-builder.Services.AddSingleton<IUserRepository>(provider => new UserRepository(connectionString, provider.GetRequiredService<IUserMapping>()));
+builder.Services.AddSingleton<IUserRepository>(provider => new UserRepository(connectionString));
 builder.Services.AddSingleton<IUserMapping, UserMapping>();
 builder.Services.AddSingleton<IValidator<User>, CreateUserValidator>();
 builder.Services.AddSingleton<IValidator<User>, UpdateUserValidator>();

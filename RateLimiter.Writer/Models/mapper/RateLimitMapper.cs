@@ -11,6 +11,7 @@ public class RateLimitMapper : IRateLimitMapper
         {
             return new RateLimit
             {
+                Id = rateLimitDb.Id,
                 Route = rateLimitDb.Route,
                 RequestsPerMinute = rateLimitDb.RequestsPerMinute
 
@@ -24,6 +25,7 @@ public class RateLimitMapper : IRateLimitMapper
         if (rateLimit != null)
             return new RateLimitDbModel
             {
+                Id = rateLimit.Id,
                 Route = rateLimit.Route,
                 RequestsPerMinute = rateLimit.RequestsPerMinute
             };

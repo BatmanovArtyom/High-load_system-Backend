@@ -11,10 +11,10 @@ public class RateLimitRepository : IRateLimitRepository
     private readonly IMongoCollection<RateLimitDbModel> _rateLimits;
     private readonly IRateLimitMapper _rateLimitMapper;
 
-    public RateLimitRepository(DatabaseInitializer databaseInitializer, IRateLimitMapper rateLimitMapper)
+    public RateLimitRepository(DatabaseInitializer databaseInitializer)
     {
         _rateLimits = databaseInitializer.GetRateLimitCollection();
-        _rateLimitMapper = rateLimitMapper;
+        _rateLimitMapper = RateLimitMapperFactory.CreateMapper();
     }
     
     

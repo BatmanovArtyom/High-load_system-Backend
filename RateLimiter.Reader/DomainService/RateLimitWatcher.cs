@@ -21,31 +21,37 @@ public class RateLimitWatcher
 
     public void WatchRateLimitUpdates()
     {
-        var pipeline = new EmptyPipelineDefinition<ChangeStreamDocument<ReaderDbModel>>()
-            .Match(change => change.OperationType == ChangeStreamOperationType.Update);
-
-        var changeStream = _rateLimitRepository.WatchChangeStream(pipeline);
-
         _ = Task.Run(async () =>
         {
             try
             {
-                while (await changeStream.MoveNextAsync())
+                while (true)
                 {
-                    foreach (var change in changeStream.Current)
+                    var rateLimitDocs = await _rateLimitRepository.GetAllRateLimitsAsync();
+                    if (rateLimitDocs != null)
                     {
-                        var updatedDoc = change.FullDocument;
-
-                        if (updatedDoc == null) continue;
-                        
-                        _rateLimits[updatedDoc.Route] = new RateLimit
+                        foreach (var doc in rateLimitDocs)
                         {
-                            Route = updatedDoc.Route,
-                            RequestsPerMinute = updatedDoc.RequestsPerMinute
-                        };
-
-                        _logger.LogInformation($"Updated rate limit for route: {updatedDoc.Route}");
+                            if (_rateLimits.ContainsKey(doc.Route))
+                            {
+                                _rateLimits[doc.Route] = new RateLimit
+                                {
+                                    Route = doc.Route,
+                                    RequestsPerMinute = doc.RequestsPerMinute
+                                };
+                            }
+                            else
+                            {
+                                _rateLimits.Add(doc.Route, new RateLimit
+                                {
+                                    Route = doc.Route,
+                                    RequestsPerMinute = doc.RequestsPerMinute
+                                });
+                            }
+                        }
+                        _logger.LogInformation("Rate limits updated.");
                     }
+                    await Task.Delay(10000);
                 }
             }
             catch (Exception ex)
@@ -54,4 +60,5 @@ public class RateLimitWatcher
             }
         });
     }
+
 }

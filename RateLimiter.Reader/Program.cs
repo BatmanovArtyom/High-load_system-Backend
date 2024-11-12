@@ -8,6 +8,6 @@ builder.Services.AddGrpc();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-app.MapGrpcService<ExampleController>();
+app.MapGrpcService<ReaderController>();
 
 await app.RunAsync("http://*:5000");

@@ -1,28 +1,26 @@
 using Grpc.Core;
 using RateLimiter.Reader.DomainService;
+using RateLimiter.Reader.Models.DbModels;
 
 namespace RateLimiter.Reader.Controllers;
 
 public class ReaderController : RateLimiterService.RateLimiterServiceBase
 {
-    private readonly ReaderService _readerService;
+    private readonly RateLimitMemoryStore _memoryStore;
 
-    public ReaderController(ReaderService readerService)
+    public ReaderController(RateLimitMemoryStore memoryStore)
     {
-        _readerService = readerService;
+        _memoryStore = memoryStore;
     }
-    
+
     public override Task<RateLimitResponse> GetRateLimits(EmptyRequest request, ServerCallContext context)
     {
-        var rateLimits = _readerService.GetAllRateLimits();
-        
         var response = new RateLimitResponse();
-        response.RateLimits.AddRange(rateLimits.Select(rl => new RateLimiter.RateLimit
+        response.RateLimits.AddRange(_memoryStore.GetAllRateLimits().Select(rl => new RateLimit
         {
             Route = rl.Route,
             RequestsPerMinute = rl.RequestsPerMinute
         }));
-
         return Task.FromResult(response);
     }
 }

@@ -12,8 +12,11 @@ builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
 builder.Services.AddSingleton<IRateLimitRepository, RateLimitRepository>();
-builder.Services.AddSingleton<ReaderService>();
+builder.Services.AddHostedService<ReaderService>();
+builder.Services.AddSingleton<RateLimitLoader>();
+builder.Services.AddSingleton<RateLimitWatcher>();
 builder.Services.AddSingleton<DatabaseInitializer>();
+builder.Services.AddSingleton<RateLimitMemoryStore>();
 
 builder.Services.AddGrpc();
 

@@ -7,58 +7,38 @@ namespace RateLimiter.Reader.DomainService;
 public class RateLimitWatcher
 {
     private readonly IRateLimitRepository _rateLimitRepository;
-    private readonly Dictionary<string, RateLimit> _rateLimits;
-    private readonly ILogger<ReaderService> _logger;
+    private readonly RateLimitMemoryStore _memoryStore;
+    private IChangeStreamCursor<ChangeStreamDocument<ReaderDbModel>> _cursor;
 
-    public RateLimitWatcher(IRateLimitRepository rateLimitRepository,
-        Dictionary<string, RateLimit> rateLimits,
-        ILogger<ReaderService> logger)
+    public RateLimitWatcher(IRateLimitRepository rateLimitRepository, RateLimitMemoryStore memoryStore)
     {
         _rateLimitRepository = rateLimitRepository;
-        _rateLimits = rateLimits;
-        _logger = logger;
+        _memoryStore = memoryStore;
     }
 
-    public void WatchRateLimitUpdates()
+    public void StartWatching()
     {
-        _ = Task.Run(async () =>
-        {
-            try
+        _cursor = _rateLimitRepository.WatchRateLimitChanges();
+
+        Task.Run(async () => { 
+            while (_cursor != null && await _cursor.MoveNextAsync())
             {
-                while (true)
+                foreach (var change in _cursor.Current)
                 {
-                    var rateLimitDocs = await _rateLimitRepository.GetAllRateLimitsAsync();
-                    if (rateLimitDocs != null)
+                    if (change.OperationType == ChangeStreamOperationType.Update ||
+                        change.OperationType == ChangeStreamOperationType.Insert)
                     {
-                        foreach (var doc in rateLimitDocs)
+                        var newLimit = change.FullDocument;
+                        if (newLimit != null)
                         {
-                            if (_rateLimits.ContainsKey(doc.Route))
-                            {
-                                _rateLimits[doc.Route] = new RateLimit
-                                {
-                                    Route = doc.Route,
-                                    RequestsPerMinute = doc.RequestsPerMinute
-                                };
-                            }
-                            else
-                            {
-                                _rateLimits.Add(doc.Route, new RateLimit
-                                {
-                                    Route = doc.Route,
-                                    RequestsPerMinute = doc.RequestsPerMinute
-                                });
-                            }
+                            _memoryStore.AddOrUpdateSingle(newLimit);
                         }
-                        _logger.LogInformation("Rate limits updated.");
                     }
-                    await Task.Delay(10000);
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error watching rate limit updates: {ex.Message}");
             }
         });
     }
+
+    public void StopWatching() => _cursor?.Dispose();
 
 }

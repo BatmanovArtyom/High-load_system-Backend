@@ -6,37 +6,27 @@ namespace RateLimiter.Reader.DomainService;
 
 public class RateLimitLoader
 {
+    private const int BatchSize = 1000;
     private readonly IRateLimitRepository _rateLimitRepository;
-    private readonly ILogger<ReaderService> _logger;
+    private readonly RateLimitMemoryStore _memoryStore;
 
-    public RateLimitLoader(IRateLimitRepository rateLimitRepository, ILogger<ReaderService> logger)
+    public RateLimitLoader(IRateLimitRepository rateLimitRepository, RateLimitMemoryStore memoryStore)
     {
         _rateLimitRepository = rateLimitRepository;
-        _logger = logger;
+        _memoryStore = memoryStore;
     }
 
-    public async Task<Dictionary<string, RateLimit>> LoadRateLimitsAsync()
+    public async Task LoadInitialDataAsync()
     {
-        var rateLimits = new Dictionary<string, RateLimit>();
-        _logger.LogInformation("Loading rate limits from MongoDB through repository...");
-        var rateLimitDocs = await _rateLimitRepository.GetAllRateLimitsAsync();
-        
-        if (rateLimitDocs == null || rateLimitDocs.Count == 0)
-        {
-            _logger.LogWarning("No rate limits found in MongoDB.");
-            return rateLimits;
-        }
-        
-        foreach (var doc in rateLimitDocs)
-        {
-            rateLimits[doc.Route] = new RateLimit
-            {
-                Route = doc.Route,
-                RequestsPerMinute = doc.RequestsPerMinute
-            };
-        }
+        int skip = 0;
 
-        _logger.LogInformation($"Loaded {rateLimits.Count} rate limits.");
-        return rateLimits;
+        while (true)
+        {
+            var batch = await _rateLimitRepository.GetRateLimitsBatchAsync(skip, BatchSize);
+            if (batch.Count == 0) break;
+
+            _memoryStore.AddOrUpdatBatch(batch);
+            skip += BatchSize;
+        }
     }
 }

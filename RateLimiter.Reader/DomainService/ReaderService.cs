@@ -4,33 +4,27 @@ using RateLimiter.Reader.Repository;
 
 namespace RateLimiter.Reader.DomainService;
 
-public class ReaderService
+public class ReaderService : IHostedService
 {
-    private Dictionary<string, RateLimit> _rateLimits = new();
-    private readonly ILogger<ReaderService> _logger;
     private readonly RateLimitLoader _rateLimitLoader;
     private readonly RateLimitWatcher _rateLimitWatcher;
-    private readonly IRateLimitRepository _rateLimitRepository;
 
-    public ReaderService(
-        ILogger<ReaderService> logger, IRateLimitRepository rateLimitRepository)
+    public ReaderService(RateLimitLoader rateLimitLoader, RateLimitWatcher rateLimitWatcher)
     {
-        _rateLimitRepository = rateLimitRepository;
-        _rateLimitLoader = new RateLimitLoader(_rateLimitRepository, logger);
-        _rateLimitWatcher = new RateLimitWatcher(_rateLimitRepository, _rateLimits, logger);
-
-        LoadRateLimitsAsync().Wait(); 
-        _rateLimitWatcher.WatchRateLimitUpdates();
+        _rateLimitLoader = rateLimitLoader;
+        _rateLimitWatcher = rateLimitWatcher;
     }
 
-    private async Task LoadRateLimitsAsync()
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        _rateLimits.Clear();
-        _rateLimits = await _rateLimitLoader.LoadRateLimitsAsync();
+        await _rateLimitLoader.LoadInitialDataAsync();
+        
+        _rateLimitWatcher.StartWatching();
     }
 
-    public List<RateLimit> GetAllRateLimits()
+    public Task StopAsync(CancellationToken cancellationToken)
     {
-        return _rateLimits.Values.ToList();
+        _rateLimitWatcher.StopWatching();
+        return Task.CompletedTask;
     }
 }

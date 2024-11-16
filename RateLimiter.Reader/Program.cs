@@ -1,4 +1,3 @@
-using RateLimiter.Reader.Controllers;
 using RateLimiter.Reader.Database;
 using RateLimiter.Reader.DomainService;
 using RateLimiter.Reader.Repository;
@@ -22,7 +21,6 @@ builder.Services.AddGrpc();
 
 var app = builder.Build();
 
-app.MapGrpcService<ReaderController>();
 
 app.MapGet("/", () => "gRPC service is running. Use a gRPC client to connect.");
 

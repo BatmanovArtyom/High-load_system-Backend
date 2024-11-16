@@ -9,11 +9,13 @@ public class RateLimitWatcher
     private readonly IRateLimitRepository _rateLimitRepository;
     private readonly RateLimitMemoryStore _memoryStore;
     private IChangeStreamCursor<ChangeStreamDocument<ReaderDbModel>> _cursor;
+    private readonly ILogger<RateLimitWatcher> _logger;
 
-    public RateLimitWatcher(IRateLimitRepository rateLimitRepository, RateLimitMemoryStore memoryStore)
+    public RateLimitWatcher(IRateLimitRepository rateLimitRepository, RateLimitMemoryStore memoryStore, ILogger<RateLimitWatcher> logger)
     {
         _rateLimitRepository = rateLimitRepository;
         _memoryStore = memoryStore;
+        _logger = logger;
     }
 
     public void StartWatching()
@@ -31,6 +33,7 @@ public class RateLimitWatcher
                         var newLimit = change.FullDocument;
                         if (newLimit != null)
                         {
+                            _logger.LogInformation("A new entry in the database has been identified");
                             _memoryStore.AddOrUpdateSingle(newLimit);
                         }
                     }

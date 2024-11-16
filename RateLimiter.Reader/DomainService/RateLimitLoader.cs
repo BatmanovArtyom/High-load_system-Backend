@@ -6,17 +6,18 @@ namespace RateLimiter.Reader.DomainService;
 
 public class RateLimitLoader
 {
-    private const int BatchSize = 1000;
     private readonly IRateLimitRepository _rateLimitRepository;
     private readonly RateLimitMemoryStore _memoryStore;
+    private readonly ILogger<RateLimitLoader> _logger;
 
-    public RateLimitLoader(IRateLimitRepository rateLimitRepository, RateLimitMemoryStore memoryStore)
+    public RateLimitLoader(IRateLimitRepository rateLimitRepository, RateLimitMemoryStore memoryStore, ILogger<RateLimitLoader> logger)
     {
         _rateLimitRepository = rateLimitRepository;
         _memoryStore = memoryStore;
+        _logger = logger;
     }
 
-    public async Task LoadInitialDataAsync()
+    public async Task LoadInitialDataAsync( int BatchSize)
     {
         int skip = 0;
 
@@ -26,6 +27,7 @@ public class RateLimitLoader
             if (batch.Count == 0) break;
 
             _memoryStore.AddOrUpdatBatch(batch);
+            _logger.LogInformation($"Loaded {batch.Count} records to the database.");
             skip += BatchSize;
         }
     }

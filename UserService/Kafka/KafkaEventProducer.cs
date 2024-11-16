@@ -28,6 +28,6 @@ public class KafkaEventProducer
         string message = JsonSerializer.Serialize(eventMessage);
 
         await producer.ProduceAsync(_topic, new Message<Null, string> { Value = message });
-        Console.WriteLine($"Отправлено сообщение: {message}");
+        // Console.WriteLine($"Отправлено сообщение: {message}");
     }
 }

@@ -34,7 +34,6 @@
 //
 // await app.RunAsync("http://*:5002");
 
-using System;
 using UserService.Kafka;
 
 class Program
@@ -44,30 +43,59 @@ class Program
         var kafkaProducer = new KafkaEventProducer("localhost:9092", "user-events");
         var scheduler = new EventScheduler(kafkaProducer);
 
-        scheduler.AddOrUpdateUserEvent(new UserEventConfig
+        Console.WriteLine("Введите команду:");
+        Console.WriteLine("1. add <userId> <endpoint> <rpm> - добавить или изменить задание.");
+        Console.WriteLine("2. update <userId> <endpoint> <rpm> - изменить параметры задания.");
+        Console.WriteLine("3. stop <userId> - остановить отправку событий для пользователя.");
+        Console.WriteLine("4. exit - завершить программу.");
+
+        while (true)
         {
-            UserId = 123,
-            Endpoint = "v1.0/users/getById",
-            Rpm = 10
-        });
+            var input = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(input))
+                continue;
 
-        scheduler.AddOrUpdateUserEvent(new UserEventConfig
-        {
-            UserId = 321,
-            Endpoint = "v1.0/users/getById",
-            Rpm = 20
-        });
+            var parts = input.Split(' ');
 
-        await Task.Delay(10000);
+            switch (parts[0])
+            {
+                case "add":
+                case "update":
+                    if (parts.Length < 4 || !int.TryParse(parts[1], out int userId) || !int.TryParse(parts[3], out int rpm))
+                    {
+                        Console.WriteLine("Неверный формат команды. Используйте: add <userId> <endpoint> <rpm>");
+                        continue;
+                    }
 
-        scheduler.AddOrUpdateUserEvent(new UserEventConfig
-        {
-            UserId = 321,
-            Endpoint = "v1.0/users/update",
-            Rpm = 25
-        });
+                    var endpoint = parts[2];
+                    scheduler.AddOrUpdateUserEvent(new UserEventConfig
+                    {
+                        UserId = userId,
+                        Endpoint = endpoint,
+                        Rpm = rpm
+                    });
+                    Console.WriteLine($"Задание для пользователя {userId} обновлено: endpoint={endpoint}, rpm={rpm}");
+                    break;
 
-        Console.WriteLine("Нажмите любую клавишу для завершения...");
-        Console.ReadKey();
+                case "stop":
+                    if (parts.Length < 2 || !int.TryParse(parts[1], out userId))
+                    {
+                        Console.WriteLine("Неверный формат команды. Используйте: stop <userId>");
+                        continue;
+                    }
+
+                    scheduler.RemoveUserEvent(userId);
+                    Console.WriteLine($"Отправка событий для пользователя {userId} остановлена.");
+                    break;
+
+                case "exit":
+                    Console.WriteLine("Завершение программы...");
+                    return;
+
+                default:
+                    Console.WriteLine("Неизвестная команда. Попробуйте снова.");
+                    break;
+            }
+        }
     }
 }

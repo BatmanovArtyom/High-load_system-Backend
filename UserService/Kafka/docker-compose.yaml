@@ -1,22 +1,22 @@
-services: # Определение набора служб.
-  zookeeper: # Служба Zookeeper, необходимая для работы Kafka.
-    image: confluentinc/cp-zookeeper:latest # Образ Docker для Zookeeper (последняя версия).
-    container_name: zookeeper # Название контейнера (чтобы обращаться по имени).
-    environment: # Переменные окружения для настройки Zookeeper.
-      ZOOKEEPER_CLIENT_PORT: 2181 # Порт, на котором Zookeeper принимает запросы от клиентов.
-      ZOOKEEPER_TICK_TIME: 2000 # Тайминг (в миллисекундах) между тиками Zookeeper (единица времени для синхронизации).
+services: 
+  zookeeper: 
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper 
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181 
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - "2181:2181" # Проброс порта: локальный порт 2181 мапится на порт 2181 внутри контейнера.
+      - "2181:2181" 
 
-  kafka: # Служба Kafka, обрабатывающая сообщения.
-    image: confluentinc/cp-kafka:latest # Образ Docker для Kafka (последняя версия).
-    container_name: kafka # Название контейнера Kafka.
-    depends_on: # Указывает, что Kafka зависит от Zookeeper, и он должен быть запущен первым.
+  kafka: 
+    image: confluentinc/cp-kafka:latest 
+    container_name: kafka 
+    depends_on:
       - zookeeper
     ports:
-      - "9092:9092" # Проброс порта: локальный порт 9092 мапится на порт 9092 внутри контейнера.
-    environment: # Переменные окружения для настройки Kafka.
-      KAFKA_BROKER_ID: 1 # Уникальный идентификатор брокера Kafka (должен быть уникальным для кластера).
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181 # Адрес Zookeeper, который используется для координации Kafka.
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092 # Адрес, по которому Kafka доступна для внешних клиентов.
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1 # Коэффициент репликации для внутреннего топика `__consumer_offsets` (1, так как только один брокер).
+      - "9092:9092" 
+    environment: 
+      KAFKA_BROKER_ID: 1 
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181 
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1 

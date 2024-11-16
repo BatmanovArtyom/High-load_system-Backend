@@ -6,6 +6,7 @@ namespace RateLimiter.Reader.DomainService;
 
 public class ReaderService : IHostedService
 {
+    private const int BatchSize = 3;
     private readonly RateLimitLoader _rateLimitLoader;
     private readonly RateLimitWatcher _rateLimitWatcher;
 
@@ -17,9 +18,10 @@ public class ReaderService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await _rateLimitLoader.LoadInitialDataAsync();
-        
+        await _rateLimitLoader.LoadInitialDataAsync(BatchSize);
         _rateLimitWatcher.StartWatching();
+        
+        
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

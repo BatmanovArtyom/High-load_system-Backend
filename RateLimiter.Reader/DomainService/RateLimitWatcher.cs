@@ -8,7 +8,7 @@ public class RateLimitWatcher
 {
     private readonly IRateLimitRepository _rateLimitRepository;
     private readonly RateLimitMemoryStore _memoryStore;
-    private IChangeStreamCursor<ChangeStreamDocument<ReaderDbModel>> _cursor;
+    private Task<IAsyncCursor<ChangeStreamDocument<ReaderDbModel>>> _cursor;
     private readonly ILogger<RateLimitWatcher> _logger;
 
     public RateLimitWatcher(IRateLimitRepository rateLimitRepository, RateLimitMemoryStore memoryStore, ILogger<RateLimitWatcher> logger)
@@ -18,9 +18,9 @@ public class RateLimitWatcher
         _logger = logger;
     }
 
-    public void StartWatching()
+    public async Task StartWatching()
     {
-        _cursor = _rateLimitRepository.WatchRateLimitChanges();
+       var _cursor = await _rateLimitRepository.WatchRateLimitChangesAsync();
 
         Task.Run(async () => { 
             while (_cursor != null && await _cursor.MoveNextAsync())
@@ -35,6 +35,15 @@ public class RateLimitWatcher
                         {
                             _logger.LogInformation("A new entry in the database has been identified");
                             _memoryStore.AddOrUpdateSingle(newLimit);
+                        }
+                    }
+
+                    if (change.OperationType == ChangeStreamOperationType.Delete)
+                    {
+                        if (change.DocumentKey.TryGetValue("_id", out var id))
+                        {
+                            _logger.LogInformation("A delete operation occurred. Removing from memory store.");
+                            _memoryStore.RemoveById(id.AsObjectId);
                         }
                     }
                 }

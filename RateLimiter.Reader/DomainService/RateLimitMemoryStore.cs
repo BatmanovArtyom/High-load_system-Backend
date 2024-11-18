@@ -31,4 +31,12 @@ public class RateLimitMemoryStore
         _logger.LogInformation("Added rate limit: Id={Id}, Route={Route}, RequestsPerMinute={RequestsPerMinute}",
             rateLimit.Id, rateLimit.Route, rateLimit.RequestsPerMinute);
     }
+    
+    public void RemoveById(ObjectId id)
+    {
+        if (_rateLimits.TryRemove(id, out var removed))
+        {
+            _logger.LogInformation($"Removed entry: {removed.Route}");
+        }
+    }
 }

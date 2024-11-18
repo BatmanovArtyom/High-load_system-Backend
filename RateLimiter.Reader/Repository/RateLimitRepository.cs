@@ -22,11 +22,13 @@ public class RateLimitRepository:IRateLimitRepository
             .ToListAsync();
     }
     
-    public IChangeStreamCursor<ChangeStreamDocument<ReaderDbModel>> WatchRateLimitChanges()
+    public async Task<IAsyncCursor<ChangeStreamDocument<ReaderDbModel>>> WatchRateLimitChangesAsync()
     {
         var pipeline = new EmptyPipelineDefinition<ChangeStreamDocument<ReaderDbModel>>()
-            .Match(change => change.OperationType == ChangeStreamOperationType.Update || 
-                             change.OperationType == ChangeStreamOperationType.Insert);
-        return _collection.Watch(pipeline);
+            .Match(change => change.OperationType == ChangeStreamOperationType.Update ||
+                             change.OperationType == ChangeStreamOperationType.Insert ||
+                             change.OperationType == ChangeStreamOperationType.Delete);
+
+        return await _collection.WatchAsync(pipeline);
     }
 }

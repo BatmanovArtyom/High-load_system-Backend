@@ -1,33 +1,45 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Confluent.Kafka;
 
 namespace UserService.Kafka;
 
-public class KafkaEventProducer
+public class KafkaEventProducer : IDisposable
 {
-    private readonly string _bootstrapServers;
     private readonly string _topic;
+    private readonly IProducer<Null, string> _producer;
+    private readonly JsonSerializerOptions _jsonSerializerOptions;
 
     public KafkaEventProducer(string bootstrapServers, string topic)
     {
-        _bootstrapServers = bootstrapServers;
         _topic = topic;
+        var config = new ProducerConfig { BootstrapServers = bootstrapServers };
+        _producer = new ProducerBuilder<Null, string>(config).Build();
+        
+        _jsonSerializerOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = null, 
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, 
+            WriteIndented = false 
+        };
     }
 
     public async Task SendEventAsync(int userId, string endpoint)
     {
-        var config = new ProducerConfig { BootstrapServers = _bootstrapServers };
-
-        using var producer = new ProducerBuilder<Null, string>(config).Build();
-        var eventMessage = new
+        var eventMessage = new KafkaEventMessage
         {
-            user_id = userId,
-            endpoint = endpoint
+            UserId = userId,
+            Endpoint = endpoint
         };
 
-        string message = JsonSerializer.Serialize(eventMessage);
+        var message = JsonSerializer.Serialize(eventMessage, _jsonSerializerOptions);
 
-        await producer.ProduceAsync(_topic, new Message<Null, string> { Value = message });
+        await _producer.ProduceAsync(_topic, new Message<Null, string> { Value = message });
         // Console.WriteLine($"Отправлено сообщение: {message}");
+    }
+    
+    public void Dispose()
+    {
+        _producer?.Dispose();
     }
 }

@@ -40,7 +40,7 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        var kafkaProducer = new KafkaEventProducer("localhost:9092", "user-events");
+        using var kafkaProducer = new KafkaEventProducer("localhost:9092", "user-events");
         var scheduler = new EventScheduler(kafkaProducer);
 
         Console.WriteLine("Введите команду:");

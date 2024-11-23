@@ -1,11 +1,13 @@
 using RateLimiter.Reader.Database;
 using RateLimiter.Reader.DomainService;
+using RateLimiter.Reader.Models.mapper;
 using RateLimiter.Reader.Repository;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("ConnectionStrings"));
+builder.Services.AddScoped<IRateLimitMapper, RateLimitMapper>();
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();

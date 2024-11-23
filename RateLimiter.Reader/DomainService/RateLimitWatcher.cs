@@ -1,5 +1,6 @@
 using MongoDB.Driver;
 using RateLimiter.Reader.Models.DbModels;
+using RateLimiter.Reader.Models.mapper;
 using RateLimiter.Reader.Repository;
 
 namespace RateLimiter.Reader.DomainService;
@@ -10,17 +11,24 @@ public class RateLimitWatcher
     private readonly RateLimitMemoryStore _memoryStore;
     private Task<IAsyncCursor<ChangeStreamDocument<ReaderDbModel>>> _cursor;
     private readonly ILogger<RateLimitWatcher> _logger;
+    private readonly IRateLimitMapper _rateLimitMapper;
 
-    public RateLimitWatcher(IRateLimitRepository rateLimitRepository, RateLimitMemoryStore memoryStore, ILogger<RateLimitWatcher> logger)
+    public RateLimitWatcher(IRateLimitRepository rateLimitRepository, RateLimitMemoryStore memoryStore, ILogger<RateLimitWatcher> logger, IRateLimitMapper rateLimitMapper)
     {
         _rateLimitRepository = rateLimitRepository;
         _memoryStore = memoryStore;
         _logger = logger;
+        _rateLimitMapper = rateLimitMapper;
     }
 
     public async Task StartWatching()
     {
-       var _cursor = await _rateLimitRepository.WatchRateLimitChangesAsync();
+        var changeStreamOptions = new ChangeStreamOptions
+        {
+            FullDocument = ChangeStreamFullDocumentOption.UpdateLookup
+        };
+        
+       var _cursor = await _rateLimitRepository.WatchRateLimitChangesAsync(changeStreamOptions);
 
         Task.Run(async () => { 
             while (_cursor != null && await _cursor.MoveNextAsync())
@@ -33,8 +41,9 @@ public class RateLimitWatcher
                         var newLimit = change.FullDocument;
                         if (newLimit != null)
                         {
+                            var domainRateLimit = _rateLimitMapper.MapToDomainModel(newLimit);
                             _logger.LogInformation("A new entry in the database has been identified");
-                            _memoryStore.AddOrUpdateSingle(newLimit);
+                            _memoryStore.AddOrUpdateSingle(domainRateLimit);
                         }
                     }
 

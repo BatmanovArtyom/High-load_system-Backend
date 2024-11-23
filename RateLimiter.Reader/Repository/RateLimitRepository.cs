@@ -14,19 +14,27 @@ public class RateLimitRepository:IRateLimitRepository
         _collection = dbInitializer.GetRateLimitCollection();
     }
 
-    public async Task<List<ReaderDbModel>> GetRateLimitsBatchAsync(int skip, int limit)
+    public async IAsyncEnumerable<ReaderDbModel> GetRateLimitsBatchAsync(int batchSize)
     {
-        return await _collection.Find(FilterDefinition<ReaderDbModel>.Empty)
-            .Skip(skip)
-            .Limit(limit)
-            .ToListAsync();
+        var options = new FindOptions<ReaderDbModel> {BatchSize = batchSize};
+        using var cursor = await _collection.FindAsync(FilterDefinition<ReaderDbModel>.Empty, options);
+
+        while (await cursor.MoveNextAsync())
+        {
+            foreach (var rateLimit in cursor.Current)
+            {
+                yield return rateLimit;
+            }
+        }
     }
     
-    public IChangeStreamCursor<ChangeStreamDocument<ReaderDbModel>> WatchRateLimitChanges()
+    public async Task<IAsyncCursor<ChangeStreamDocument<ReaderDbModel>>> WatchRateLimitChangesAsync(ChangeStreamOptions options)
     {
         var pipeline = new EmptyPipelineDefinition<ChangeStreamDocument<ReaderDbModel>>()
-            .Match(change => change.OperationType == ChangeStreamOperationType.Update || 
-                             change.OperationType == ChangeStreamOperationType.Insert);
-        return _collection.Watch(pipeline);
+            .Match(change => change.OperationType == ChangeStreamOperationType.Update ||
+                             change.OperationType == ChangeStreamOperationType.Insert ||
+                             change.OperationType == ChangeStreamOperationType.Delete);
+        
+        return await _collection.WatchAsync(pipeline, options);
     }
-}
+}    

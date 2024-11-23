@@ -5,7 +5,7 @@ namespace RateLimiter.Reader.Repository;
 
 public interface IRateLimitRepository
 {
-    public Task<List<ReaderDbModel>> GetRateLimitsBatchAsync(int skip, int limit);
+    public IAsyncEnumerable<ReaderDbModel> GetRateLimitsBatchAsync(int batchSize);
 
-    public IChangeStreamCursor<ChangeStreamDocument<ReaderDbModel>> WatchRateLimitChanges();
+    public Task<IAsyncCursor<ChangeStreamDocument<ReaderDbModel>>> WatchRateLimitChangesAsync(ChangeStreamOptions options);
 }

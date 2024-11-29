@@ -1,11 +1,13 @@
+using MongoDB.Bson;
 using MongoDB.Driver;
 using RateLimiter.Reader.Models.DbModels;
+using RateLimiter.Reader.Models.DomainModels;
 
 namespace RateLimiter.Reader.Repository;
 
 public interface IRateLimitRepository
 {
-    public IAsyncEnumerable<ReaderDbModel> GetRateLimitsBatchAsync(int batchSize);
+    public IAsyncEnumerable<RateLimits> GetRateLimitsBatchAsync(int batchSize);
 
-    public Task<IAsyncCursor<ChangeStreamDocument<ReaderDbModel>>> WatchRateLimitChangesAsync(ChangeStreamOptions options);
+    public Task WatchRateLimitChangesAsync(Action<RateLimits> onRateLimitUpdate, Action<ObjectId> onRateLimitDelete);
 }

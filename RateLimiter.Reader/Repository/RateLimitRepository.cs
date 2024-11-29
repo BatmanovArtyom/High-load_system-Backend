@@ -1,20 +1,25 @@
+using MongoDB.Bson;
 using MongoDB.Driver;
 using RateLimiter.Reader.Database;
 using RateLimiter.Reader.Models.DbModels;
+using RateLimiter.Reader.Models.DomainModels;
+using RateLimiter.Reader.Models.mapper;
 
 namespace RateLimiter.Reader.Repository;
 
 public class RateLimitRepository:IRateLimitRepository
 {
     private readonly IMongoCollection<ReaderDbModel> _collection;
+    private readonly IRateLimitMapper _rateLimitMapper;
 
 
-    public RateLimitRepository(DatabaseInitializer dbInitializer)
+    public RateLimitRepository(DatabaseInitializer dbInitializer, IRateLimitMapper rateLimitMapper)
     {
         _collection = dbInitializer.GetRateLimitCollection();
+        _rateLimitMapper = rateLimitMapper;
     }
 
-    public async IAsyncEnumerable<ReaderDbModel> GetRateLimitsBatchAsync(int batchSize)
+    public async IAsyncEnumerable<RateLimits> GetRateLimitsBatchAsync(int batchSize)
     {
         var options = new FindOptions<ReaderDbModel> {BatchSize = batchSize};
         using var cursor = await _collection.FindAsync(FilterDefinition<ReaderDbModel>.Empty, options);
@@ -23,18 +28,37 @@ public class RateLimitRepository:IRateLimitRepository
         {
             foreach (var rateLimit in cursor.Current)
             {
-                yield return rateLimit;
+                yield return _rateLimitMapper.MapToDomainModel(rateLimit);
             }
         }
     }
     
-    public async Task<IAsyncCursor<ChangeStreamDocument<ReaderDbModel>>> WatchRateLimitChangesAsync(ChangeStreamOptions options)
+    public async Task WatchRateLimitChangesAsync(Action<RateLimits> onRateLimitUpdate, Action<ObjectId> onRateLimitDelete)
     {
-        var pipeline = new EmptyPipelineDefinition<ChangeStreamDocument<ReaderDbModel>>()
-            .Match(change => change.OperationType == ChangeStreamOperationType.Update ||
-                             change.OperationType == ChangeStreamOperationType.Insert ||
-                             change.OperationType == ChangeStreamOperationType.Delete);
-        
-        return await _collection.WatchAsync(pipeline, options);
+        var options = new ChangeStreamOptions
+        {
+            FullDocument = ChangeStreamFullDocumentOption.UpdateLookup
+        };
+
+        using var cursor = await _collection.WatchAsync(options);
+        await cursor.ForEachAsync(change =>
+        {
+            if (change.OperationType == ChangeStreamOperationType.Update ||
+                change.OperationType == ChangeStreamOperationType.Insert)
+            {
+                var updatedRateLimit = new RateLimits
+                {
+                    Id = change.DocumentKey["_id"].AsObjectId,
+                    Route = change.FullDocument.Route,
+                    RequestsPerMinute = change.FullDocument.RequestsPerMinute
+                };
+                onRateLimitUpdate(updatedRateLimit);
+            }
+            else if (change.OperationType == ChangeStreamOperationType.Delete)
+            {
+                var deletedId = change.DocumentKey["_id"].AsObjectId;
+                onRateLimitDelete(deletedId);
+            }
+        });
     }
 }    

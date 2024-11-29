@@ -20,13 +20,11 @@ public class ReaderService : IHostedService
     {
         await _rateLimitLoader.LoadInitialDataAsync(BatchSize);
         _rateLimitWatcher.StartWatching();
-        
-        
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        _rateLimitWatcher.StopWatching();
+        _rateLimitWatcher.Dispose();
         return Task.CompletedTask;
     }
 }
